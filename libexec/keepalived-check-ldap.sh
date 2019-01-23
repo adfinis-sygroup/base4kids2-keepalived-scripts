@@ -87,12 +87,12 @@ confDir="$(realpath "${scriptDir}/../etc")"
 #
 # The LDAP configuration file to use
 # See LDAP.CONF(5)
-ldapConfigDefault="${confDir}/check-ldap.ldaprc"
+ldapConfigDefault="${confDir}/keepalived-check-ldap.ldaprc"
 ldapConfig="${LDAPCONF:-${ldapConfigDefault}}"
 
 # The LDAP passwd file to use
 # This file contains the bind password for simple authentication
-ldapPasswdFileDefault="${confDir}/check-ldap.passwd"
+ldapPasswdFileDefault="${confDir}/keepalived-check-ldap.passwd"
 ldapPasswdFile="${CHECK_LDAP_PASSWDFILE:-${ldapPasswdFileDefault}}"
 
 # The relative base DN of the check related LDAP leaf entry
