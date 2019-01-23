@@ -1,0 +1,31 @@
+###############################################################################
+# Initial example LDIF for the keepalived-check-ldap.sh script
+###############################################################################
+#
+# Copyright (C) 2019 Adfinis SyGroup AG
+#                    https://adfinis-sygroup.ch
+#                    info@adfinis-sygroup.ch
+# 
+# This LDIF is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation, version 3 of the License.
+#
+# The DNs as well as the hostname parts (ldap-01 & ldap-02) have to be
+# modified before loading this LDIF to suite the local environment.
+#
+# See also:
+# https://github.com/adfinis-sygroup/base4kids2-keepalived-scripts
+#
+dn: cn=keepalived-ldap-01,ou=Monitoring,dc=example,dc=com
+objectClass: top
+objectClass: applicationProcess
+cn: keepalived-ldap-01
+description: keepalived-check-ldap.sh: Not yet updated.
+seeAlso: https://github.com/adfinis-sygroup/base4kids2-keepalived-scripts
+
+dn: cn=keepalived-ldap-02,ou=Monitoring,dc=example,dc=com
+objectClass: top
+objectClass: applicationProcess
+cn: keepalived-ldap-01
+description: keepalived-check-ldap.sh: Not yet updated.
+seeAlso: https://github.com/adfinis-sygroup/base4kids2-keepalived-scripts
