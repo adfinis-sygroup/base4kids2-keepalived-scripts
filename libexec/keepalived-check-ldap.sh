@@ -245,6 +245,8 @@ function processArguments ()
     test -r "${ldapConfig}" || \
     dieMsg "Non-existent or unreadable LDAP config '${ldapConfig}'"
 
+    export LDAPCONF="${ldapConfig}"
+
     test -r "${ldapPasswdFile}" || \
     dieMsg "Non-existent or unreadable LDAP passwd file '${ldapPasswdFile}'"
 
