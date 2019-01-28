@@ -28,11 +28,9 @@ objectClass: top
 objectClass: applicationProcess
 cn: keepalived-ldap-01
 description: keepalived-check-ldap.sh: Not yet updated.
-seeAlso: https://github.com/adfinis-sygroup/base4kids2-keepalived-scripts
 
 dn: cn=keepalived-ldap-02,ou=Monitoring,dc=example,dc=com
 objectClass: top
 objectClass: applicationProcess
 cn: keepalived-ldap-02
 description: keepalived-check-ldap.sh: Not yet updated.
-seeAlso: https://github.com/adfinis-sygroup/base4kids2-keepalived-scripts
