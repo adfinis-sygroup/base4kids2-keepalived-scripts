@@ -16,6 +16,13 @@
 # See also:
 # https://github.com/adfinis-sygroup/base4kids2-keepalived-scripts
 #
+dn: ou=Monitoring,dc=example,dc=com
+objectClass: top
+objectClass: organizationalUnit
+ou: Monitoring
+description: Subtree holding technical entries required for monitoring
+ and service checks.
+
 dn: cn=keepalived-ldap-01,ou=Monitoring,dc=example,dc=com
 objectClass: top
 objectClass: applicationProcess
@@ -26,6 +33,6 @@ seeAlso: https://github.com/adfinis-sygroup/base4kids2-keepalived-scripts
 dn: cn=keepalived-ldap-02,ou=Monitoring,dc=example,dc=com
 objectClass: top
 objectClass: applicationProcess
-cn: keepalived-ldap-01
+cn: keepalived-ldap-02
 description: keepalived-check-ldap.sh: Not yet updated.
 seeAlso: https://github.com/adfinis-sygroup/base4kids2-keepalived-scripts
