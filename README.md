@@ -102,12 +102,42 @@ echo -n "changeme" > <PREFIX>/etc/keepalived-check-ldap.passwd
 ```
 
 Configure Keepalived to include the script on all nodes (make sure to adapt the
-host names accordingly).
+host names, interface, IP addresses and VRRP secret accordingly).
 ```bash
 vi /etc/keepalived/keepalived.conf
 ```
 ```
-@TODO: Include configuration
+vrrp_script check_simple_ip_failover {
+  script "/usr/libexec/keepalived/keepalived-check-ldap.sh -b dc=example,dc=com -H ldaps://ldap-01.example.com" 
+  interval 15
+  fall 2
+  rise 2
+}
+
+vrrp_instance VI_1 {
+  state MASTER
+  interface ens33
+  virtual_router_id 34
+  priority 100
+  advert_int 1
+  authentication {
+    auth_type PASS
+    auth_pass MY-VRRP-SECRET
+  }
+
+  unicast_src_ip 192.168.0.11
+  unicast_peer {
+    192.168.0.12
+  }
+    
+
+  virtual_ipaddress {
+    192.168.0.10/24
+  }
+  track_script {
+   check_simple_ip_failover
+  }
+}
 ```
 
 Restart Keepalived:
