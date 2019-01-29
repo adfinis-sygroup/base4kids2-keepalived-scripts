@@ -34,11 +34,10 @@
 #
 # It returns 0 on success or a non-zero exit status on failures.
 #
-# The script expects the LDAP server, base DN and binding information within a
-# LDAP configuration file according to LDAP.CONF(5). The bind password is
-# expected within an LDAP passwd file for simple authentication. The path to
-# both files can be changed from their default values if needed, either by
-# environment variables or script options.
+# The script expects the LDAP URI, base DN and binding information to be passed
+# by arguments or environment variables and uses sensitive defaults for all
+# values. The bind password is expected within an LDAP passwd file for simple
+# authentication.
 #
 # See also:
 # http://www.keepalived.org/
@@ -81,27 +80,54 @@ scriptDir="$(dirname $(realpath "$0"))"
 # The path to the configuration directory
 confDir="$(realpath "${scriptDir}/../etc")"
 
+# The short host name (without the domain suffix)
+hostName="$(hostname --short)"
+
 
 ###
 # LDAP related settings
 #
-# The LDAP configuration file to use
-# See LDAP.CONF(5)
-ldapConfigDefault="${confDir}/keepalived-check-ldap.ldaprc"
-ldapConfig="${LDAPCONF:-${ldapConfigDefault}}"
+# The URI of the LDAP server
+# Overridable via input argument or LDAPURI env according to LDAP.CONF(5)
+ldapUriDefault="ldap://localhost:389"
+ldapUri="${LDAPURI:-${ldapUriDefault}}"
+
+# The LDAP base DN to use
+# Overridable via input argument or LDAPBASE env according to LDAP.CONF(5)
+ldapBaseDefault="dc=example,dc=com"
+ldapBase="${LDAPBASE:-${ldapBaseDefault}}"
+
+# The LDAP bind DN to use
+# Overridable via input argument or LDAPBINDDN env according to LDAP.CONF(5)
+ldapBindDefault="uid=keepalived-service,ou=Special Users,${ldapBase}"
+ldapBind="${LDAPBIND:-${ldapBindDefault}}"
 
 # The LDAP passwd file to use
 # This file contains the bind password for simple authentication
 ldapPasswdFileDefault="${confDir}/keepalived-check-ldap.passwd"
 ldapPasswdFile="${CHECK_LDAP_PASSWDFILE:-${ldapPasswdFileDefault}}"
 
-# The relative base DN of the check related LDAP leaf entry
-ldapRdnDefault="cn=keepalived-$(hostname --short)"
-ldapRdn="${CHECK_LDAP_RDN:-${ldapRdnDefault}}"
+# The DN of the Keepalived check related LDAP leaf entry
+ldapKeepalivedDnDefault="cn=keepalived-${hostName},ou=Monitoring,${ldapBase}"
+ldapKeepalivedDn="${CHECK_LDAP_KEEPALIVED_DN:-${ldapKeepalivedDnDefault}}"
 
 # The attribute to read or update during the check
 ldapAttributeDefault="description"
 ldapAttribute="${CHECK_LDAP_ATTRIBUTE:-${ldapAttributeDefault}}"
+
+
+# The LDAP network timeout (in seconds)
+# Overridable via LDAPNETWORK_TIMEOUT env according to LDAP.CONF(5)
+export LDAPNETWORK_TIMEOUT="${LDAPNETWORK_TIMEOUT:-"3"}"
+
+# Timeout (in seconds) after which calls to LDAP APIs will abort if no response
+# is received.
+# Overridable via LDAPTIMEOUT env according to LDAP.CONF(5)
+export LDAPTIMEOUT="${LDAPTIMEOUT:-"5"}"
+
+# Checks to perform on server certificates in a TLS session
+# Overridable via LDAPTLS_REQCERT env according to LDAP.CONF(5)
+export LDAPTLS_REQCERT="${LDAPTLS_REQCERT:-"demand"}"
 
 
 ##
@@ -109,7 +135,7 @@ ldapAttribute="${CHECK_LDAP_ATTRIBUTE:-${ldapAttributeDefault}}"
 #
 # Script Version
 
-_VERSION="0.1.0"
+_VERSION="0.2.0"
 
 
 ##
@@ -162,14 +188,14 @@ function processArguments ()
     # Define all options as unset by default
     declare -A optionFlags
 
-    for optionName in a c d p h r v; do
+    for optionName in a b d D h H k p r v; do
         optionFlags[${optionName}]=false
     done
 
     # Set default action (there is only one at the moment)
     action="CheckLdap"
 
-    while getopts ":a:c:p:r:dhv" option; do
+    while getopts ":a:b:D:H:k:p:r:dhv" option; do
         debugMsg "Processing option '${option}'"
 
         case "$option" in
@@ -184,11 +210,41 @@ function processArguments ()
                 debugMsg "ldapAttribute set to: '${ldapAttribute}'"
             ;;
 
-            c )
-                # The LDAP configuration file to use
-                # File path validation happens later on
-                ldapConfig="${OPTARG}"
-                debugMsg "ldapConfig set to: '${ldapConfig}'"
+            b )
+                # The base DN to be used
+                # Cheap DN validation
+                if ! [[ "${OPTARG}" =~ ^[[:alnum:]]+=[[:print:]]+$ ]]
+                then
+                    dieMsg "Invalid LDAP base DN specified"
+                fi
+
+                ldapBase="${OPTARG}"
+                debugMsg "ldapBase set to: '${ldapBase}'"
+            ;;
+
+            D )
+                # The Bind DN to be used
+                # Cheap DN validation
+                if ! [[ "${OPTARG}" =~ ^[[:alnum:]]+=[[:print:]]+$ ]]
+                then
+                    dieMsg "Invalid LDAP bind DN specified"
+                fi
+
+                ldapBind="${OPTARG}"
+                debugMsg "ldapBind set to: '${ldapBind}'"
+            ;;
+
+            H )
+                # The LDAP URI of the LDAP server
+                # Cheap LDAP URI validation
+                if ! [[ "${OPTARG}" =~ \
+                    ^ldap(s|i)?://([[:alnum:]]|[[:punct:]])+$ ]]
+                then
+                    dieMsg "Invalid LDAP URI specified"
+                fi
+
+                ldapUri="${OPTARG}"
+                debugMsg "ldapUri set to: '${ldapUri}'"
             ;;
 
             p )
@@ -198,16 +254,16 @@ function processArguments ()
                 debugMsg "ldapPasswdFile set to: '${ldapPasswdFile}'"
             ;;
 
-            r )
-                # The relative base DN of the check related LDAP leaf entry 
-                # Cheap RDN validation
+            k )
+                # The DN of the Keepalived check related LDAP leaf entry 
+                # Cheap DN validation
                 if ! [[ "${OPTARG}" =~ ^[[:alnum:]]+=[[:print:]]+$ ]]
                 then
-                    dieMsg "Invalid relative LDAP DN specified"
+                    dieMsg "Invalid Keepalived check DN specified"
                 fi
 
-                ldapRdn="${OPTARG}"
-                debugMsg "ldapRdn set to: '${ldapRdn}'"
+                ldapKeepalivedDn="${OPTARG}"
+                debugMsg "ldapKeepalivedDn set to: '${ldapKeepalivedDn}'"
             ;;
 
             d )
@@ -242,11 +298,6 @@ function processArguments ()
         optionFlags[${option}]=true # Option was provided
     done
 
-    test -r "${ldapConfig}" || \
-    dieMsg "Non-existent or unreadable LDAP config '${ldapConfig}'"
-
-    export LDAPCONF="${ldapConfig}"
-
     test -r "${ldapPasswdFile}" || \
     dieMsg "Non-existent or unreadable LDAP passwd file '${ldapPasswdFile}'"
 
@@ -260,23 +311,26 @@ function printUsage ()
 {
     cat << EOF
 
-Usage: $( basename "$0" ) [-a ATTRIBUTE] [-c LDAPCONF] [-p PASSWDFILE]
-                          [-r RDN] [-dhv]
+Usage: $( basename "$0" ) [-a ATTRIBUTE] [-b LDAPBASEDN] [-D LDAPBASEDN]
+                                [-H LDAPURI] [-p PASSWDFILE] [-k CHECKDN] [-dhv]
 
-    -a ATTRIBUTE    The LDAP attribute to read or update during the check
+    -a ATTRIBUTE    The LDAP attribute to read or update during the check,
                     defaults to '${ldapAttributeDefault}'
-    -c LDAPCONF     The LDAP configuration file to use, defaults to
-                    '${ldapConfigDefault}'
+    -b LDAPBASEDN   The LDAP base DN to use as a suffix for DN buildings,
+                    defaults to '${ldapBaseDefault}'
+    -D LDAPBINDDN   The LDAP bind DN to use, defaults to
+                    '${ldapBindDefault}'
+    -H LDAPURI      The LDAP URI of the LDAP server, defaults to
+                    '${ldapUri}'
     -d              Enable debug messages
     -p PASSWDFILE   The LDAP passwd file to use, defaults to
                     '${ldapPasswdFileDefault}'
-    -r RDN          The relative base DN of the check related LDAP leaf entry
-                    defaults to '${ldapRdnDefault}'
+    -k CHECKDN      The DN of the Keepalived check related LDAP leaf entry,
+                    defaults to '${ldapKeepalivedDn}'
     -h              Display this help and exit
     -v              Display the version and exit
 
-Note, that the LDAPCONF (-c) file must be in the format of LDAPCONF(5) with at
-least the following configuration options set: URI, BASE and BINDDN.
+Note, that all options are also overridable via environment variables.
 
 The bind password is expected within the PASSWDFILE (-p). Reading the bind
 password from a file, rather than passing it via an input option, prevents the
@@ -310,16 +364,18 @@ actionCheckLdap ()
     local ldapDebugOpt=""
 
     local scriptName="$( basename "$0" )"
-    local hostName="$(hostname --short)"
     local utcDateTime="$(date --utc --iso-8601="seconds")"
 
     local ldapValue="${scriptName}: Last update from ${hostName} on ${utcDateTime}"
     debugMsg "Modifying LDAP attribute '${ldapAttribute}': ${ldapValue}"
-
     [ "$DEBUG" = "yes" ] && ldapDebugOpt="-d -1 -vvv"
 
-    ldapmodify ${ldapDebugOpt} -x -y "${ldapPasswdFile}" << EO_LDIF
-dn: ${ldapRdn}
+    ldapmodify ${ldapDebugOpt} \
+               -x \
+               -D "${ldapBind}" \
+               -y "${ldapPasswdFile}" \
+               -H "${ldapUri}" << EO_LDIF
+dn: ${ldapKeepalivedDn}
 changetype: modify
 replace: ${ldapAttribute}
 ${ldapAttribute}: ${ldapValue}
