@@ -22,6 +22,10 @@ objectClass: organizationalUnit
 ou: Monitoring
 description: Subtree holding technical entries required for monitoring
  and service checks.
+aci: (target="ldap:///cn=keepalived-*,ou=Monitoring,dc=example,dc=com")(targetattr=*)
+ (version 3.0;acl "Allow full-access for keepalived-service user to
+ cn=keepalived prefixed entries";
+ allow(all) userdn = "ldap:///uid=keepalived-service,ou=Special Users,dc=example,dc=com";)
 
 dn: cn=keepalived-ldap-01,ou=Monitoring,dc=example,dc=com
 objectClass: top
