@@ -1,0 +1,40 @@
+###############################################################################
+# Initial example LDIF for the keepalived-check-ldap.sh script
+###############################################################################
+#
+# Copyright (C) 2019 Adfinis SyGroup AG
+#                    https://adfinis-sygroup.ch
+#                    info@adfinis-sygroup.ch
+# 
+# This LDIF is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation, version 3 of the License.
+#
+# The DNs as well as the hostname parts (ldap-01 & ldap-02) have to be
+# modified before loading this LDIF to suite the local environment.
+#
+# See also:
+# https://github.com/adfinis-sygroup/base4kids2-keepalived-scripts
+#
+dn: ou=Monitoring,dc=example,dc=com
+objectClass: top
+objectClass: organizationalUnit
+ou: Monitoring
+description: Subtree holding technical entries required for monitoring
+ and service checks.
+aci: (target="ldap:///cn=keepalived-*,ou=Monitoring,dc=example,dc=com")(targetattr=*)
+ (version 3.0;acl "Allow full-access for keepalived-service user to
+ cn=keepalived prefixed entries";
+ allow(all) userdn = "ldap:///uid=keepalived-service,ou=Special Users,dc=example,dc=com";)
+
+dn: cn=keepalived-ldap-01,ou=Monitoring,dc=example,dc=com
+objectClass: top
+objectClass: applicationProcess
+cn: keepalived-ldap-01
+description: keepalived-check-ldap.sh: Not yet updated.
+
+dn: cn=keepalived-ldap-02,ou=Monitoring,dc=example,dc=com
+objectClass: top
+objectClass: applicationProcess
+cn: keepalived-ldap-02
+description: keepalived-check-ldap.sh: Not yet updated.

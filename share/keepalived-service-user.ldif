@@ -1,0 +1,28 @@
+###############################################################################
+# Initial example LDIF for the keepalived service user
+###############################################################################
+#
+# Copyright (C) 2019 Adfinis SyGroup AG
+#                    https://adfinis-sygroup.ch
+#                    info@adfinis-sygroup.ch
+# 
+# This LDIF is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation, version 3 of the License.
+#
+# The DNs as well as userPassword have to be modified before loading this
+# LDIF to suite the local environment.
+#
+# See also:
+# https://github.com/adfinis-sygroup/base4kids2-keepalived-scripts
+#
+dn: uid=keepalived-service,ou=Special Users,dc=example,dc=com
+objectClass: top
+objectClass: person
+objectClass: inetorgperson
+objectClass: organizationalperson
+uid: keepalived-service
+sn: Service
+givenName: keepalived
+cn: keepalived Service
+userPassword: changeme
