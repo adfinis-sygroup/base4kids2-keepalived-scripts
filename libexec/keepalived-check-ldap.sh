@@ -92,24 +92,10 @@ hostName="$(hostname --short)"
 ldapUriDefault="ldap://localhost:389"
 ldapUri="${LDAPURI:-${ldapUriDefault}}"
 
-# The LDAP base DN to use
-# Overridable via input argument or LDAPBASE env according to LDAP.CONF(5)
-ldapBaseDefault="dc=example,dc=com"
-ldapBase="${LDAPBASE:-${ldapBaseDefault}}"
-
-# The LDAP bind DN to use
-# Overridable via input argument or LDAPBINDDN env according to LDAP.CONF(5)
-ldapBindDefault="uid=keepalived-service,ou=Special Users,${ldapBase}"
-ldapBind="${LDAPBIND:-${ldapBindDefault}}"
-
 # The LDAP passwd file to use
 # This file contains the bind password for simple authentication
 ldapPasswdFileDefault="${confDir}/keepalived-check-ldap.passwd"
 ldapPasswdFile="${CHECK_LDAP_PASSWDFILE:-${ldapPasswdFileDefault}}"
-
-# The DN of the Keepalived check related LDAP leaf entry
-ldapKeepalivedDnDefault="cn=keepalived-${hostName},ou=Monitoring,${ldapBase}"
-ldapKeepalivedDn="${CHECK_LDAP_KEEPALIVED_DN:-${ldapKeepalivedDnDefault}}"
 
 # The attribute to read or update during the check
 ldapAttributeDefault="description"
@@ -192,7 +178,7 @@ function processArguments ()
         optionFlags[${optionName}]=false
     done
 
-    # Set default action (there is only one at the moment)
+    # Set default action
     action="CheckLdap"
 
     while getopts ":a:b:D:H:k:p:r:dhv" option; do
@@ -273,25 +259,21 @@ function processArguments ()
             ;;
 
             h )
-                printUsage
-                exit 0
+                action="PrintUsage"
             ;;
 
             v )
-                printVersion
-                exit 0
+                action="PrintVersion"
             ;;
 
             \? )
                 errorMsg "Invalid option '-${OPTARG}' specified"
-                printUsage
-                exit 1
+                action="PrintUsageWithError"
             ;;
 
             : )
                 errorMsg "Missing argument for '-${OPTARG}'"
-                printUsage
-                exit 1
+                action="PrintUsageWithError"
             ;;
         esac
 
@@ -301,13 +283,34 @@ function processArguments ()
     test -r "${ldapPasswdFile}" || \
     dieMsg "Non-existent or unreadable LDAP passwd file '${ldapPasswdFile}'"
 
+    # The LDAP base DN to use
+    # Overridable via input argument or LDAPBASE env according to LDAP.CONF(5)
+    ldapBaseDefault="dc=example,dc=com"
+    ldapBase="${ldapBase:-${LDAPBASE:-${ldapBaseDefault}}}"
+
+    # The LDAP bind DN to use
+    # Overridable via input argument or LDAPBINDDN env according to LDAP.CONF(5)
+    ldapBindDefault="uid=keepalived-service,ou=Special Users,${ldapBase}"
+    ldapBind="${ldapBind:-${LDAPBIND:-${ldapBindDefault}}}"
+
+    # The DN of the Keepalived check related LDAP leaf entry
+    ldapKeepalivedDnDefault="cn=keepalived-${hostName},ou=Monitoring,${ldapBase}"
+    ldapKeepalivedDn="${ldapKeepalivedDn:-${CHECK_LDAP_KEEPALIVED_DN:-${ldapKeepalivedDnDefault}}}"
+
+    debugMsg "ldapUri:          ${ldapUri}"
+    debugMsg "ldapBase:         ${ldapBase}"
+    debugMsg "ldapBind:         ${ldapBind}"
+    debugMsg "ldapPasswdFile:   ${ldapPasswdFile}"
+    debugMsg "ldapKeepalivedDn: ${ldapKeepalivedDn}"
+    debugMsg "ldapAttribute:    ${ldapAttribute}"
+
     debugMsg "Action: ${action}"
 }
 
 # Displays the help message
 #
-# printUsage
-function printUsage ()
+# actionPrintUsage
+function actionPrintUsage ()
 {
     cat << EOF
 
@@ -321,12 +324,12 @@ Usage: $( basename "$0" ) [-a ATTRIBUTE] [-b LDAPBASEDN] [-D LDAPBASEDN]
     -D LDAPBINDDN   The LDAP bind DN to use, defaults to
                     '${ldapBindDefault}'
     -H LDAPURI      The LDAP URI of the LDAP server, defaults to
-                    '${ldapUri}'
+                    '${ldapUriDefault}'
     -d              Enable debug messages
     -p PASSWDFILE   The LDAP passwd file to use, defaults to
                     '${ldapPasswdFileDefault}'
     -k CHECKDN      The DN of the Keepalived check related LDAP leaf entry,
-                    defaults to '${ldapKeepalivedDn}'
+                    defaults to '${ldapKeepalivedDnDefault}'
     -h              Display this help and exit
     -v              Display the version and exit
 
@@ -338,11 +341,19 @@ password from beeing exposed to other processes or users.
 EOF
 }
 
+# Displays the help message and exit with error
+#
+# actionPrintUsage
+function actionPrintUsageWithError ()
+{
+    actionPrintUsage
+    exit 1
+}
 
 # Displays the version of this script
 #
-# printVersion
-function printVersion ()
+# actionPrintVersion
+function actionPrintVersion ()
 {
     cat << EOF
 Copyright (C) 2019 Adfinis SyGroup AG
