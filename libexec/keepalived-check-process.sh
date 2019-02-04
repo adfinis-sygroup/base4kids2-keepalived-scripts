@@ -56,6 +56,20 @@
 # successfully.
 set -o pipefail
 
+# Check if all required external commands are available
+for cmd in date \
+           dirname \
+           hostname \
+           killall \
+           realpath
+do
+    command -v "${cmd}" >/dev/null 2>&1 || {
+        echo >&2 "Missing command '${cmd}'"
+        exit 1
+    }
+
+done
+
 ##
 # Private variables, do not overwrite them
 #
