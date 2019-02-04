@@ -1,6 +1,6 @@
 #!/bin/bash
 ################################################################################
-# keepalived-check-process.sh - Checks acess to a PID
+# keepalived-check-process.sh - Checks for the existence of a given process
 ################################################################################
 #
 # Copyright (C) 2019 Adfinis SyGroup AG
@@ -30,10 +30,10 @@
 #
 # Description:
 # This script is intended to be used together with Keepalived as a
-# VRRP tracking script. It checks the access to a process by means 
-# of a SIGNULL (NULL) 'signal'. No actual signal is sent but it is 
-# checked if the caller would be allowed to send a signal and if 
-# the process exists, see 'man 2 kill'.
+# VRRP tracking script. It checks the existence of a given process
+# by means of a SIGNULL (NULL) 'signal'. No actual signal is sent
+# but it is checked if the caller would be allowed to send a signal
+# and if the process exists, see 'man 2 kill'.
 # 
 # It returns 0 on success or a non-zero exit status on failures.
 # 
