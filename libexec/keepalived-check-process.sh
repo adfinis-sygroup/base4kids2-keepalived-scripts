@@ -45,7 +45,7 @@
 # https://github.com/adfinis-sygroup/base4kids2-keepalived-scripts
 #
 # Usage:
-# ./keepalived-check-process.sh KEEPALIVED_CHECK_PROCESS_NAME
+#  keepalived-check-process.sh [-p KEEPALIVED_CHECK_PROCESS_NAME] [-dhv] KEEPALIVED_CHECK_PROCESS_NAME
 #
 # See keepalived-check-process.sh -h for further options
 #
@@ -194,7 +194,7 @@ function actionPrintUsage ()
 {
     cat << EOF
 
-Usage: $( basename "$0" ) [-dhv] KEEPALIVED_CHECK_PROCESS_NAME
+Usage: $( basename "$0" ) [-p KEEPALIVED_CHECK_PROCESS_NAME] [-dhv] KEEPALIVED_CHECK_PROCESS_NAME
 
     -p   Process name to check
     -d   Enable debug messages
