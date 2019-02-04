@@ -81,7 +81,7 @@ install: all installdirs
 	
 	$(INSTALL_PROGRAM) libexec/keepalived-check-process.sh \
 		$(DESTDIR)$(keepalivedlibexecdir)/keepalived-check-process.sh
-	
+		
 	$(INSTALL_DATA) share/* \
 			$(DESTDIR)$(datadir)/$(PN)/
 	
@@ -104,7 +104,7 @@ uninstall:
 		$(DESTDIR)$(libexecdir) \
 		$(DESTDIR)$(docdir) \
 		$(DESTDIR)$(docrootdir) \
-		$(DESTDIR)$(datadir)/$(PN) \
+                $(DESTDIR)$(datadir)/$(PN) \
 		$(DESTDIR)$(datadir) \
 		$(DESTDIR)$(sysconfdir) \
 		$(DESTDIR)$(exec_prefix)
