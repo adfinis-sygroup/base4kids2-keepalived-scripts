@@ -63,11 +63,6 @@ set -o pipefail
 
 _VERSION="0.0.1"
 
-###
-# Proces related settings
-#
-processName="${KEEPALIVED_CHECK_PROCESS_NAME:-${processName}}"
-
 ##
 # Helper functions
 #
@@ -159,7 +154,7 @@ function processArguments ()
     shift $((OPTIND-1))
 
     # The name of the process to check
-    processName="${1:-${processName}}"
+    processName="${1:-${KEEPALIVED_CHECK_PROCESS_NAME}}"
     if [ -z "${processName}" ]
     then
         errorMsg "No process name supplied"
