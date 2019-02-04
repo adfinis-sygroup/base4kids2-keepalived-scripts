@@ -127,17 +127,22 @@ function processArguments ()
     # Define all options as unset by default
     declare -A optionFlags
 
-    for optionName in d h v; do
+    for optionName in p d h v; do
         optionFlags[${optionName}]=false
     done
 
     # Set default action
     action="CheckProcess"
 
-    while getopts ":dhv" option; do
+    while getopts ":p:dhv" option; do
         debugMsg "Processing option '${option}'"
 
         case "$option" in
+            p )
+                # Process name to check
+                processName="${OPTARG}"
+            ;;
+
             d )
                 # Enable debug messages
                 export DEBUG="yes"
@@ -167,15 +172,18 @@ function processArguments ()
     done
     shift $((OPTIND-1))
 
-    # The name of the process to check
-    processName="${1:-${KEEPALIVED_CHECK_PROCESS_NAME}}"
-    if [ -z "${processName}" ]
+    # use the first argument if no explicit process specified
+    processName="${processName:-${1}}"
+    # use the env variable if no process as first argument
+    processName="${processName:-${KEEPALIVED_CHECK_PROCESS_NAME}}"
+    debugMsg "${optionFlags[v]}"
+    if [[ -n "${processName}" ]] || [[ ${optionFlags[v]} ]] || [[ ${optionFlags[h]} ]]
     then
-        errorMsg "No process name supplied"
-        action="PrintUsageWithError"
-    else
         debugMsg "Process name set to: '${processName}'"
         debugMsg "Action:               ${action}"
+    else
+        errorMsg "No process name supplied"
+        action="PrintUsageWithError"
     fi
 }
 
@@ -188,6 +196,7 @@ function actionPrintUsage ()
 
 Usage: $( basename "$0" ) [-dhv] KEEPALIVED_CHECK_PROCESS_NAME
 
+    -p   Process name to check
     -d   Enable debug messages
     -h   Display this help and exit
     -v   Display the version and exit
