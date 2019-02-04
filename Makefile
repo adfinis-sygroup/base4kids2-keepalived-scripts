@@ -94,8 +94,7 @@ install: all installdirs
 .PHONY: uninstall
 uninstall:
 	rm --force \
-		$(DESTDIR)$(keepalivedlibexecdir)/keepalived-check-ldap.sh \
-		$(DESTDIR)$(keepalivedlibexecdir)/keepalived-check-process.sh \
+		$(DESTDIR)$(keepalivedlibexecdir)/keepalived-check-*.sh \
 		$(DESTDIR)$(datadir)/$(PN)/* \
 		$(DESTDIR)$(docdir)/README.md \
 		$(DESTDIR)/$(sysconfdir)/keepalived-check-ldap.passwd
