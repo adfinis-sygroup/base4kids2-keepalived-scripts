@@ -61,7 +61,7 @@ set -o pipefail
 #
 # Script Version
 
-_VERSION="0.0.1"
+_VERSION="0.1.0"
 
 ##
 # Helper functions
