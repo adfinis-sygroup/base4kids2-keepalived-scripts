@@ -217,7 +217,7 @@ EOF
 # actionCheckProcess
 actionCheckProcess ()
 {
-    killall -0 $processName
+    killall -0 "${processName}"
     return $?
 }
 
