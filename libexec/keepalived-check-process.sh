@@ -176,14 +176,17 @@ function processArguments ()
     processName="${processName:-${1}}"
     # use the env variable if no process as first argument
     processName="${processName:-${KEEPALIVED_CHECK_PROCESS_NAME}}"
-    debugMsg "${optionFlags[v]}"
-    if [[ -n "${processName}" ]] || [[ ${optionFlags[v]} ]] || [[ ${optionFlags[h]} ]]
+    if [[ -z "${processName}" ]]
     then
+        # exit if no -h or -v option supplied and empty process name
+        if [[ "${optionFlags[h]}" == "false" ]] && [[ "${optionFlags[v]}" == "false" ]]
+        then
+            errorMsg "No process name supplied"
+            action="PrintUsageWithError"
+        fi
+    else
         debugMsg "Process name set to: '${processName}'"
         debugMsg "Action:               ${action}"
-    else
-        errorMsg "No process name supplied"
-        action="PrintUsageWithError"
     fi
 }
 
