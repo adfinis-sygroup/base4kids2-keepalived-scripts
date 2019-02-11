@@ -34,9 +34,9 @@
 # by means of a SIGNULL (NULL) 'signal'. No actual signal is sent
 # but it is checked if the caller would be allowed to send a signal
 # and if the process exists, see 'man 2 kill'.
-# 
+#
 # It returns 0 on success or a non-zero exit status on failures.
-# 
+#
 # The script expects the name of the process or service to perform
 # the check on to be passed by argument or environment variable.
 #
@@ -57,11 +57,7 @@
 set -o pipefail
 
 # Check if all required external commands are available
-for cmd in date \
-           dirname \
-           hostname \
-           killall \
-           realpath
+for cmd in killall
 do
     command -v "${cmd}" >/dev/null 2>&1 || {
         echo >&2 "Missing command '${cmd}'"
