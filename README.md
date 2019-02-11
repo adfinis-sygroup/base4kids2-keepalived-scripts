@@ -2,7 +2,42 @@
 [Keepalived](http://www.keepalived.org/) notify, alerts and check scripts for
 [Base4Kids](http://www.base4kids.ch).
 
-## Keepalived LDAP multi-master check
+This repository contains VRRP scripts for Keepalived providing a collection of
+VRRP scripts that can be selectively deployed in the appropriate SELinux
+location `/usr/libexec/keepalived`. Further instructions on configuration and
+usage for these two scripts can be found in the respective sections below.
+
+## VRRP Script Overview
+This section outlines how the VRRP scripts "LDAP" and "generic process probe"
+work internally.
+
+### Generic Process Probe
+The [`keepalived-check-process.sh`](libexec/keepalived-check-process.sh) script
+can be used together with any service or process which resides behind a common
+virtual IP address coordinated by Keepalived and VRRP. It requires no further
+configuration on part of the services.
+
+This VRRP script checks the existence of the process or service `$processName`
+on the local Keepalived host using the command:
+
+`killall -0 $processName`
+
+The `-0` (SIGNULL) flag does not send a real signal to the process, but rather
+checks if Keepalived would be allowed to send a signal to the process (i.e., a
+probe). In case the `killall` operation fails (return code > 0), Keepalived
+will remove a possible active VRRP virtual IP from this host.
+
+In comparison to the LDAP script, it does not perform an actual health check of
+the service, but, as the LDAP check script, this script needs to be installed on
+a Keepalived host. The script has been tested with these services:
+* ProxySQL
+* HAProxy
+
+Even though the script only executes the single `killall` command, it was
+decided to add it to a dedicated script in order to copy it to the correct
+SELinux location. Otherwise, SELinux blocks the execution of `killall`.
+
+### Keepalived LDAP multi-master check
 The [`keepalived-check-ldap.sh`](libexec/keepalived-check-ldap.sh) script is
 intended to be used together with an LDAP multi-master setup which resides
 behind a common virtual IP address coordinated by Keepalived and VRRP.
@@ -34,8 +69,7 @@ active VRRP virtual IP from this host.
 To use the keepalived scripts, install [Keepalived](http://www.keepalived.org/)
 from your distribution's package repository (or build it from source), clone
 this repository and use the provided [Makefile](Makefile) to configure and
-install the files. It is assumed, that you already have a working LDAP
-multi-master setup up and running.
+install the files.
 ```bash
 # install keepalived (example for RedHat/CentOS based systems)
 yum install keepalived
@@ -55,10 +89,76 @@ cd base4kids2-keepalived-scripts
 make install keepalivedlibexecdir=/usr/libexec/keepalived
 ```
 
+### Usage instructions for Generic Process Probe
+Follow the [general usage instructions above](#general-usage-instructions). Unlike the LDAP script, this
+process probe does not require further configuration on part of the service.
+
+Configure Keepalived to include the script on all nodes (make sure to adapt the
+host names, interface, IP addresses and VRRP secret accordingly).
+```bash
+vi /etc/keepalived/keepalived.conf
+```
+
+For instance, to probe a haproxy process, use this configuration:
+```
+vrrp_script check_proces {
+  script "/usr/libexec/keepalived/keepalived-check-process.sh haproxy
+  interval 15
+  fall 2
+  rise 2
+}
+
+vrrp_instance VI_1 {
+  state MASTER
+  interface ens33
+  virtual_router_id 34
+  priority 100
+  advert_int 1
+  authentication {
+    auth_type PASS
+    auth_pass MY-VRRP-SECRET
+  }
+
+  unicast_src_ip 192.168.0.11
+  unicast_peer {
+    192.168.0.12
+  }
+
+
+  virtual_ipaddress {
+    192.168.0.10/24
+  }
+  track_script {
+   check_process
+  }
+}
+```
+Restart Keepalived:
+```bash
+systemctl restart keepalived.service
+journalctl -f -u keepalived.service
+```
+
+Script usage:
+```bash
+./libexec/keepalived-check-process.sh -h
+```
+```
+Usage: keepalived-check-process.sh [-p KEEPALIVED_CHECK_PROCESS_NAME] [-dhv]
+                                   KEEPALIVED_CHECK_PROCESS_NAME
+    -p   Process name to check
+    -d   Enable debug messages
+    -h   Display this help and exit
+    -v   Display the version and exit
+
+    Note, that the process name is also overridable via environment variables.
+```
+
 ### Usage instructions for Keepalived LDAP multi-master check
-Follow the general usage instructions above. Afterwards, you will have to
-create an LDAP service user as well as the basic DIT structure required for the
-service check.
+Follow the [general usage instructions above](#general-usage-instructions). For this VRRP script it is assumed,
+that you already have a working LDAP multi-master setup up and running. Afterwards,
+you will have to create an LDAP service user as well as the basic DIT structure
+required for the service check.
 
 The following example LDIFs are provided, you need to modify them to suite your
 environment.
@@ -107,8 +207,8 @@ host names, interface, IP addresses and VRRP secret accordingly).
 vi /etc/keepalived/keepalived.conf
 ```
 ```
-vrrp_script check_simple_ip_failover {
-  script "/usr/libexec/keepalived/keepalived-check-ldap.sh -b dc=example,dc=com -H ldaps://ldap-01.example.com" 
+vrrp_script check_ldap {
+  script "/usr/libexec/keepalived/keepalived-check-ldap.sh -b dc=example,dc=com -H ldaps://ldap-01.example.com"
   interval 15
   fall 2
   rise 2
@@ -129,13 +229,13 @@ vrrp_instance VI_1 {
   unicast_peer {
     192.168.0.12
   }
-    
+
 
   virtual_ipaddress {
     192.168.0.10/24
   }
   track_script {
-   check_simple_ip_failover
+   check_ldap
   }
 }
 ```
