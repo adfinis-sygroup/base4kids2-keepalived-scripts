@@ -78,6 +78,9 @@ installdirs:
 install: all installdirs
 	$(INSTALL_PROGRAM) libexec/keepalived-check-ldap.sh.tmp \
 		$(DESTDIR)$(keepalivedlibexecdir)/keepalived-check-ldap.sh
+	
+	$(INSTALL_PROGRAM) libexec/keepalived-check-process.sh \
+		$(DESTDIR)$(keepalivedlibexecdir)/keepalived-check-process.sh
 		
 	$(INSTALL_DATA) share/* \
 			$(DESTDIR)$(datadir)/$(PN)/
@@ -91,7 +94,7 @@ install: all installdirs
 .PHONY: uninstall
 uninstall:
 	rm --force \
-		$(DESTDIR)$(keepalivedlibexecdir)/keepalived-check-ldap.sh \
+		$(DESTDIR)$(keepalivedlibexecdir)/keepalived-check-*.sh \
 		$(DESTDIR)$(datadir)/$(PN)/* \
 		$(DESTDIR)$(docdir)/README.md \
 		$(DESTDIR)/$(sysconfdir)/keepalived-check-ldap.passwd
