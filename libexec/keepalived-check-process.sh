@@ -45,7 +45,7 @@
 # https://github.com/adfinis-sygroup/base4kids2-keepalived-scripts
 #
 # Usage:
-#  keepalived-check-process.sh [-p KEEPALIVED_CHECK_PROCESS_NAME] [-dhv] KEEPALIVED_CHECK_PROCESS_NAME
+#  keepalived-check-process.sh -p KEEPALIVED_CHECK_PROCESS_NAME
 #
 # See keepalived-check-process.sh -h for further options
 #
@@ -66,12 +66,14 @@ do
 
 done
 
+
 ##
 # Private variables, do not overwrite them
 #
 # Script Version
 
 _VERSION="0.1.0"
+
 
 ##
 # Helper functions
@@ -87,7 +89,6 @@ function debugMsg ()
     fi
 }
 
-
 # Prints an info message
 #
 # infoMsg MESSAGE
@@ -96,7 +97,6 @@ function infoMsg ()
     echo "[INFO] $1"
 }
 
-
 # Prints an error message
 #
 # errorMsg MESSAGE
@@ -104,7 +104,6 @@ function errorMsg ()
 {
     echo "[ERROR] $1" >&2
 }
-
 
 # Prints an error message and exists immediately with an non-zero exit code
 #
@@ -170,12 +169,14 @@ function processArguments ()
 
     # use the first argument if no explicit process specified
     processName="${processName:-${1}}"
+
     # use the env variable if no process as first argument
     processName="${processName:-${KEEPALIVED_CHECK_PROCESS_NAME}}"
-    if [[ -z "${processName}" ]]
-    then
+
+    if [[ -z "${processName}" ]]; then
         # exit if no -h or -v option supplied and empty process name
-        if [[ "${optionFlags[h]}" == "false" ]] && [[ "${optionFlags[v]}" == "false" ]]
+        if [[ "${optionFlags[h]}" == "false" ]] && \
+           [[ "${optionFlags[v]}" == "false" ]]
         then
             errorMsg "No process name supplied"
             action="PrintUsageWithError"
